@@ -4,6 +4,9 @@ AVPROGS-$(CONFIG_FFPROBE)  += ffprobe
 
 AVPROGS     := $(AVPROGS-yes:%=%$(PROGSSUF)$(EXESUF))
 PROGS       += $(AVPROGS)
+MYTHPROGS   = $(addprefix myth, ${PROGS})
+MYTHFFLIBS  = -lmythavfilter -lmythavformat -lmythavcodec -lmythavresample \
+-lmythpostproc -lmythswresample -lmythswscale
 
 AVBASENAMES  = ffmpeg ffplay ffprobe
 ALLAVPROGS   = $(AVBASENAMES:%=%$(PROGSSUF)$(EXESUF))
@@ -33,8 +36,22 @@ all: $(AVPROGS)
 fftools/ffprobe.o fftools/cmdutils.o: libavutil/ffversion.h | fftools
 OUTDIRS += fftools
 
+# ${MYTHPROGS}:
+mythffmpeg:
+	cp ffmpeg_g mythffmpeg
+
+mythffprobe:
+	cp ffprobe_g mythffprobe
+
+mythffserver:
+	cp ffserver_g mythffserver
+
+mythffplay:
+	cp ffplay_g mythffplay
+
 ifdef AVPROGS
-install: install-progs install-data
+install: install-mythprogs
+
 endif
 
 install-progs-yes:
@@ -43,6 +60,10 @@ install-progs-$(CONFIG_SHARED): install-libs
 install-progs: install-progs-yes $(AVPROGS)
 	$(Q)mkdir -p "$(BINDIR)"
 	$(INSTALL) -c -m 755 $(AVPROGS) "$(BINDIR)"
+
+install-mythprogs: install-progs-yes $(MYTHPROGS)
+	$(Q)mkdir -p "$(BINDIR)"
+	$(INSTALL) -c -m 755 $(MYTHPROGS) "$(BINDIR)"
 
 uninstall: uninstall-progs
 
