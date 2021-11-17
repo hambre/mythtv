@@ -532,6 +532,9 @@ redo:
     } else if (es_type == STREAM_TYPE_AUDIO_AAC) {
         codec_id = AV_CODEC_ID_AAC;
         type     = AVMEDIA_TYPE_AUDIO;
+    } else if (es_type == STREAM_TYPE_AUDIO_AAC_LATM) {
+        codec_id = AV_CODEC_ID_AAC_LATM;
+        type     = AVMEDIA_TYPE_AUDIO;
     } else if (es_type == STREAM_TYPE_VIDEO_MPEG4) {
         codec_id = AV_CODEC_ID_MPEG4;
         type     = AVMEDIA_TYPE_VIDEO;
