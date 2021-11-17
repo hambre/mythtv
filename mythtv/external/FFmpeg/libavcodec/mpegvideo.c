@@ -1235,6 +1235,16 @@ int ff_mpv_frame_start(MpegEncContext *s, AVCodecContext *avctx)
             pic->reference = 3;
     }
 
+    /* Myth Change - Begin */
+    /* Put ATSC captions cached from parse_user_data into the correct frame */
+    memcpy(pic->f->atsc_cc_buf, s->tmp_atsc_cc_buf, s->tmp_atsc_cc_len);
+    pic->f->atsc_cc_len = s->tmp_atsc_cc_len;
+    s->tmp_atsc_cc_len = 0;
+    memcpy(pic->f->scte_cc_buf, s->tmp_scte_cc_buf, s->tmp_scte_cc_len);
+    pic->f->scte_cc_len = s->tmp_scte_cc_len;
+    s->tmp_scte_cc_len = 0;
+    /* Myth Change - End */
+
     pic->f->coded_picture_number = s->coded_picture_number++;
 
     if (alloc_picture(s, pic) < 0)

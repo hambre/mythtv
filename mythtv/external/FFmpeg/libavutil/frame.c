@@ -435,6 +435,13 @@ FF_DISABLE_DEPRECATION_WARNINGS
 FF_ENABLE_DEPRECATION_WARNINGS
 #endif
 
+    /* MythTV ATSC Subtitle Support -- Begin */
+    dst->atsc_cc_len   = src->atsc_cc_len;
+    dst->scte_cc_len   = src->scte_cc_len;
+    memcpy(dst->atsc_cc_buf, src->atsc_cc_buf, src->atsc_cc_len);
+    memcpy(dst->scte_cc_buf, src->scte_cc_buf, src->scte_cc_len);
+    /* MythTV ATSC Subtitle Support -- End */
+
     ret = av_buffer_replace(&dst->opaque_ref, src->opaque_ref);
     ret |= av_buffer_replace(&dst->private_ref, src->private_ref);
     return ret;

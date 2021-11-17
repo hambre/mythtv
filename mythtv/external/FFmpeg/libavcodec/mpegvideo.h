@@ -505,6 +505,15 @@ typedef struct MpegEncContext {
     char *tc_opt_str;        ///< timecode option string
     AVTimecode tc;           ///< timecode context
 
+#define ATSC_CC_BUF_SIZE 1024
+    /// Used to hold cached user_data about caption packets before the
+    /// frame for these packets has been created in MPV_frame_start().
+    uint8_t tmp_atsc_cc_buf[ATSC_CC_BUF_SIZE];
+    int     tmp_atsc_cc_len;
+#define SCTE_CC_BUF_SIZE 1024
+    uint8_t tmp_scte_cc_buf[SCTE_CC_BUF_SIZE];
+    int     tmp_scte_cc_len;
+
     uint8_t *ptr_lastgob;
     int swap_uv;             //vcr2 codec is an MPEG-2 variant with U and V swapped
     int pack_pblocks;        //xvmc needs to keep blocks without gaps.
