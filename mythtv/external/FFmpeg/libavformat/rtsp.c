@@ -49,7 +49,7 @@
 #include "rtpenc_chain.h"
 #include "url.h"
 #include "rtpenc.h"
-#include "mpegts.h"
+#include "mpegts-mythtv.h"
 
 /* Default timeout values for read packet in seconds  */
 #define READ_PACKET_TIMEOUT_S 10
