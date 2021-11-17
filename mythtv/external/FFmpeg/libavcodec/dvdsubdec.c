@@ -429,7 +429,10 @@ FF_ENABLE_DEPRECATION_WARNINGS
         cmd_pos = next_cmd_pos;
     }
     if (sub_header->num_rects > 0)
+    {
+        sub_header->forced = is_menu;
         return is_menu;
+    }
  fail:
     reset_rects(sub_header);
     return -1;
