@@ -70,12 +70,12 @@ static int mpegaudio_parse(AVCodecParserContext *s1,
 
                 state= (state<<8) + buf[i++];
 
-                ret = ff_mpa_decode_header(state, &sr, &channels, &frame_size, &bit_rate, &codec_id);
+                ret = ff_mpa_decode_header(state, &sr, &channels, &frame_size, &bit_rate, &codec_id, &avctx->avcodec_dual_language);
                 if (ret < 4) {
                     if (i > 4)
                         s->header_count = -2;
                 } else {
-                    int header_threshold = avctx->codec_id != AV_CODEC_ID_NONE && avctx->codec_id != codec_id;
+                    int header_threshold = (avctx->codec_id != AV_CODEC_ID_NONE && avctx->codec_id != codec_id) || avctx->sample_rate == 0;
                     if((state&SAME_HEADER_MASK) != (s->header&SAME_HEADER_MASK) && s->header)
                         s->header_count= -3;
                     s->header= state;
