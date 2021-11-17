@@ -766,6 +766,14 @@ int ff_h264_execute_ref_pic_marking(H264Context *h)
             h->short_ref[0] = h->cur_pic_ptr;
             h->short_ref_count++;
             h->cur_pic_ptr->reference |= h->picture_structure;
+
+            /* MythTV changes - begin */
+            // do not add more reference frames than allowed after seeing frame num gap
+            if (!mmco_count && h->short_ref_count > h->ps.sps->ref_frame_count) {
+                pic = h->short_ref[h->short_ref_count - 1];
+                remove_short(h, pic->frame_num, 0);
+            }
+            /* MythTV changes - end */
         }
     }
 
