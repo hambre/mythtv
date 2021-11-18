@@ -1132,6 +1132,12 @@ static int dvbsub_parse_clut_segment(AVCodecContext *avctx,
                     return AVERROR_INVALIDDATA;
             }
 
+            // MythTV added
+            if (alpha == 255)
+            {
+                r = g = b = 0;
+            }
+
             if (depth & 0x80 && entry_id < 4)
                 clut->clut4[entry_id] = RGBA(r,g,b,255 - alpha);
             else if (depth & 0x40 && entry_id < 16)
