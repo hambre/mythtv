@@ -13,6 +13,7 @@ extern "C" {
 #include "libavutil/avutil.h"
 #include "libavutil/error.h"
 #include "libavutil/log.h"
+#include "libavutil/intreadwrite.h" // for AV_RB32 and AV_RB24
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libavformat/avio.h"
@@ -1476,9 +1477,8 @@ int AvFormatDecoder::GetMaxReferenceFrames(AVCodecContext *Context)
         case AV_CODEC_ID_H265: return 16;
         case AV_CODEC_ID_VP9:  return 8;
         case AV_CODEC_ID_VP8:  return 3;
-        default: break;
+        default: return 2;
     }
-    return 2;
 }
 
 void AvFormatDecoder::InitVideoCodec(AVStream *stream, AVCodecContext *enc,
