@@ -3468,6 +3468,12 @@ static const AVCodecDescriptor codec_descriptors[] = {
         .long_name = NULL_IF_CONFIG_SMALL("ivtv proprietary embedded VBI captions"),
     },
     {
+        .id        = AV_CODEC_ID_DVB_VBI,
+        .type      = AVMEDIA_TYPE_DATA,
+        .name      = "dvb_vbi",
+        .long_name = NULL_IF_CONFIG_SMALL("dvb teletext"),
+    },
+    {
         .id        = AV_CODEC_ID_TIMED_ID3,
         .type      = AVMEDIA_TYPE_DATA,
         .name      = "timed_id3",
