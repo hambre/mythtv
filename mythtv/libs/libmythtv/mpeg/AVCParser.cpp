@@ -8,6 +8,7 @@
 
 extern "C" {
 #include "libavcodec/avcodec.h"
+#include "libavcodec/internal.h" // for avpriv_find_start_code
 #include "libavutil/internal.h"
 
 #ifdef __clang__

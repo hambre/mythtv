@@ -20,6 +20,10 @@
  *   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+extern "C" {
+#include "libavcodec/internal.h" // for avpriv_find_start_code
+}
+
 // MythTV headers
 #include "streamlisteners.h"
 #include "scanstreamdata.h"

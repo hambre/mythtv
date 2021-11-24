@@ -15,6 +15,7 @@ extern "C" {
 #include "libavutil/log.h"
 #include "libavutil/intreadwrite.h" // for AV_RB32 and AV_RB24
 #include "libavcodec/avcodec.h"
+#include "libavcodec/internal.h" // for avpriv_find_start_code
 #include "libavformat/avformat.h"
 #include "libavformat/avio.h"
 #include "libavformat/internal.h"
