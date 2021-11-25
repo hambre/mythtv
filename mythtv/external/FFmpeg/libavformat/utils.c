@@ -883,6 +883,9 @@ FF_ENABLE_DEPRECATION_WARNINGS
                    "Invalid stream index.\n");
 
         st = s->streams[pkt->stream_index];
+        
+        if (!st)
+            return -1;
 
         if (update_wrap_reference(s, st, pkt->stream_index, pkt) && st->internal->pts_wrap_behavior == AV_PTS_WRAP_SUB_OFFSET) {
             // correct first time stamps to negative values
@@ -956,6 +959,10 @@ FF_ENABLE_DEPRECATION_WARNINGS
 
     *pnum = 0;
     *pden = 0;
+
+    if (!st || !st->codecpar)
+        return;
+    
     switch (st->codecpar->codec_type) {
     case AVMEDIA_TYPE_VIDEO:
         if (st->r_frame_rate.num && !pc && s->iformat) {
@@ -1121,6 +1128,9 @@ static void update_initial_timestamps(AVFormatContext *s, int stream_index,
     PacketList *pktl_it;
 
     uint64_t shift;
+
+    if (!st)
+        return;
 
     if (st->first_dts != AV_NOPTS_VALUE ||
         dts           == AV_NOPTS_VALUE ||
@@ -1616,7 +1626,8 @@ FF_ENABLE_DEPRECATION_WARNINGS
                    av_ts2str(pkt->dts),
                    pkt->size, pkt->duration, pkt->flags);
 
-        if (st->need_parsing && !st->parser && !(s->flags & AVFMT_FLAG_NOPARSE)) {
+        if (st && st->codecpar && st->need_parsing && !st->parser &&
+            !(s->flags & AVFMT_FLAG_NOPARSE)) {
             st->parser = av_parser_init(st->codecpar->codec_id);
             if (!st->parser) {
                 av_log(s, AV_LOG_VERBOSE, "parser not found for codec "
@@ -3719,11 +3730,15 @@ FF_ENABLE_DEPRECATION_WARNINGS
     }
 
     for (i = 0; i < ic->nb_streams; i++) {
+        // MythTV change here
+        if (ic->streams[i]->internal->info )
+        {
 #if FF_API_R_FRAME_RATE
         ic->streams[i]->internal->info->last_dts = AV_NOPTS_VALUE;
 #endif
         ic->streams[i]->internal->info->fps_first_dts = AV_NOPTS_VALUE;
         ic->streams[i]->internal->info->fps_last_dts  = AV_NOPTS_VALUE;
+        }
     }
 
     read_size = 0;
