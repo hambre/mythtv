@@ -1094,6 +1094,12 @@ typedef struct AVStream {
     int nb_index_entries;
     unsigned int index_entries_allocated_size;
 
+    /* mythtv addons */
+    int component_tag; ///< Component tag given in PMT, for MythTV MHEG
+    int carousel_id;
+    int data_id;
+    /* end mythtv addons */
+
     /**
      * Stream Identifier
      * This is the MPEG-TS stream identifier +1
