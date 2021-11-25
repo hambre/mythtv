@@ -727,14 +727,8 @@ static int save_subtitle_set(AVCodecContext *avctx, AVSubtitle *sub, int *got_ou
     DVBSubCLUT *clut;
     uint32_t *clut_table;
     int i;
-    int offset_x=0, offset_y=0;
     int ret = 0;
 
-
-    if (display_def) {
-        offset_x = display_def->x;
-        offset_y = display_def->y;
-    }
 
     /* Not touching AVSubtitles again*/
     if (sub->num_rects) {
@@ -782,10 +776,20 @@ static int save_subtitle_set(AVCodecContext *avctx, AVSubtitle *sub, int *got_ou
                 continue;
 
             rect = sub->rects[i];
-            rect->x = display->x_pos + offset_x;
-            rect->y = display->y_pos + offset_y;
+            rect->x = display->x_pos;
+            rect->y = display->y_pos;
             rect->w = region->width;
             rect->h = region->height;
+            if (display_def) {
+                rect->display_x = display_def->x;
+                rect->display_y = display_def->y;
+                rect->display_w = display_def->width;
+                rect->display_h = display_def->height;
+            }
+            else {
+                rect->display_w = 720;
+                rect->display_h = 576;
+            }
             rect->nb_colors = (1 << region->depth);
             rect->type      = SUBTITLE_BITMAP;
             rect->linesize[0] = region->width;

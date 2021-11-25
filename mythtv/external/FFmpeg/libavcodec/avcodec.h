@@ -2699,6 +2699,10 @@ typedef struct AVSubtitleRect {
     int w;         ///< width            of pict, undefined when pict is not set
     int h;         ///< height           of pict, undefined when pict is not set
     int nb_colors; ///< number of colors in pict, undefined when pict is not set
+    int display_x; ///< top left corner of region into which pict is displayed
+    int display_y; ///< top left corner of region into which pict is displayed
+    int display_w; ///< width           of region into which pict is displayed
+    int display_h; ///< height          of region into which pict is displayed
 
 #if FF_API_AVPICTURE
     /**
