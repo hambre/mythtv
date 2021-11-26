@@ -631,6 +631,11 @@ skip:
     st->internal->request_probe     = request_probe;
     st->need_parsing      = AVSTREAM_PARSE_FULL;
 
+    /* notify the callback of the change in streams */
+    if (s->streams_changed) {
+        s->streams_changed(s->stream_change_data);
+    }
+
 found:
     if (st->discard >= AVDISCARD_ALL)
         goto skip;

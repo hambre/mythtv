@@ -1546,6 +1546,11 @@ static int64_t ts_to_samples(AVStream *st, int64_t ts)
     return av_rescale(ts, st->time_base.num * st->codecpar->sample_rate, st->time_base.den);
 }
 
+/**
+ * Simply sets data pointer to null.
+ *
+ * This will leak memory if no one else frees the memory used by the packet.
+ */
 static int read_frame_internal(AVFormatContext *s, AVPacket *pkt)
 {
     int ret, i, got_packet = 0;
@@ -1848,7 +1853,7 @@ return_packet:
 }
 
 /* XXX: suppress the packet queue */
-static void flush_packet_queue(AVFormatContext *s)
+void flush_packet_queue(AVFormatContext *s)
 {
     if (!s->internal)
         return;
@@ -1862,6 +1867,9 @@ static void flush_packet_queue(AVFormatContext *s)
 /*******************************************************/
 /* seek support */
 
+/**
+ * @brief Finds the index of the first video stream within the AVFormatContext.
+ */
 int av_find_default_stream_index(AVFormatContext *s)
 {
     int i;
@@ -2776,10 +2784,15 @@ static void estimate_timings_from_bit_rate(AVFormatContext *ic)
                "Estimating duration from bitrate, this may be inaccurate\n");
 }
 
+/** Maximum number of bytes we read to determine timing from PTS stream. */
 #define DURATION_MAX_READ_SIZE 250000LL
 #define DURATION_MAX_RETRY 6
 
-/* only usable for MPEG-PS streams */
+/**
+ * @brief Estimates timings using PTS stream.
+ *
+ * only usable for MPEG-PS streams
+ */
 static void estimate_timings_from_pts(AVFormatContext *ic, int64_t old_offset)
 {
     AVPacket *pkt = ic->internal->pkt;
@@ -2834,6 +2847,13 @@ static void estimate_timings_from_pts(AVFormatContext *ic, int64_t old_offset)
             if (ret != 0)
                 break;
             read_size += pkt->size;
+
+            if (pkt->stream_index >= ic->nb_streams)
+            {
+                av_packet_unref(pkt);
+                continue;
+            }
+
             st         = ic->streams[pkt->stream_index];
             if (pkt->pts != AV_NOPTS_VALUE &&
                 (st->start_time != AV_NOPTS_VALUE ||
@@ -2975,6 +2995,11 @@ static void estimate_timings(AVFormatContext *ic, int64_t old_offset)
                duration_estimate_name(ic->duration_estimation_method),
                (int64_t)ic->bit_rate / 1000);
     }
+}
+
+void av_estimate_timings(AVFormatContext *ic, int64_t old_offset)
+{
+    estimate_timings(ic, old_offset);
 }
 
 static int has_codec_parameters(AVStream *st, const char **errmsg_ptr)

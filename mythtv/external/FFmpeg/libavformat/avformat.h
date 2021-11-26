@@ -1364,6 +1364,14 @@ typedef struct AVFormatContext {
     unsigned int packet_size;
     int max_delay;
 
+    /* Myth addons */
+    /* mpeg-ts support */
+    void (*streams_changed)(void*);
+    void *stream_change_data;
+    const uint8_t *cur_pmt_sect;
+    int cur_pmt_sect_len;
+    /* End Myth addons */
+
     /**
      * Flags modifying the (de)muxer behaviour. A combination of AVFMT_FLAG_*.
      * Set by the user before avformat_open_input() / avformat_write_header().
@@ -3010,6 +3018,11 @@ int avformat_transfer_internal_stream_timing_info(const AVOutputFormat *ofmt,
  * @param st  input stream to extract the timebase from
  */
 AVRational av_stream_get_codec_timebase(const AVStream *st);
+
+/* MythTV changes */
+void av_estimate_timings(AVFormatContext *ic, int64_t old_offset);
+void flush_packet_queue(AVFormatContext *s);
+/* End MythTV changes */
 
 /**
  * @}
