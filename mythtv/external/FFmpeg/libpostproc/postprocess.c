@@ -91,8 +91,6 @@ try to unroll inner for(x=0 ... loop to avoid these damn if(x ... checks
 #include "libavutil/avstring.h"
 #include "libavutil/ppc/util_altivec.h"
 
-#include "libavutil/cpu.h"
-
 #include "libavutil/ffversion.h"
 const char postproc_ffversion[] = "FFmpeg version " FFMPEG_VERSION;
 
@@ -882,25 +880,9 @@ av_cold pp_context *pp_get_context(int width, int height, int cpuCaps){
     PPContext *c= av_mallocz(sizeof(PPContext));
     int stride= FFALIGN(width, 16);  //assumed / will realloc if needed
     int qpStride= (width+15)/16 + 2; //assumed / will realloc if needed
-    int cpuflags;
 
     if (!c)
         return NULL;
-
-    if (CONFIG_RUNTIME_CPUDETECT &&
-        !(cpuCaps & (PP_CPU_CAPS_MMX   | PP_CPU_CAPS_MMX2    |
-                     PP_CPU_CAPS_3DNOW | PP_CPU_CAPS_ALTIVEC ))) {
-        cpuflags = av_get_cpu_flags();
-
-        if (HAVE_MMX && cpuflags & AV_CPU_FLAG_MMX)
-            cpuCaps |= PP_CPU_CAPS_MMX;
-        if (HAVE_MMX2 && cpuflags & AV_CPU_FLAG_MMX2)
-            cpuCaps |= PP_CPU_CAPS_MMX2;
-        if (HAVE_AMD3DNOW && cpuflags & AV_CPU_FLAG_3DNOW)
-            cpuCaps |= PP_CPU_CAPS_3DNOW;
-        if (HAVE_ALTIVEC && cpuflags & AV_CPU_FLAG_ALTIVEC)
-            cpuCaps |= PP_CPU_CAPS_ALTIVEC;
-    }
 
     c->av_class = &av_codec_context_class;
     if(cpuCaps&PP_FORMAT){

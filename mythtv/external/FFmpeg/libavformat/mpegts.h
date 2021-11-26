@@ -137,12 +137,29 @@
 #define STREAM_TYPE_AUDIO_TRUEHD    0x83
 #define STREAM_TYPE_AUDIO_EAC3      0x87
 
+/* ISO/IEC 13818-1 Table 2-22 */
+#define STREAM_ID_PRIVATE_STREAM_1   0xbd
+#define STREAM_ID_AUDIO_STREAM_0     0xc0
+#define STREAM_ID_VIDEO_STREAM_0     0xe0
+#define STREAM_ID_METADATA_STREAM    0xfc
+#define STREAM_ID_EXTENDED_STREAM_ID 0xfd
+
+/* ISO/IEC 13818-1 Table 2-45 */
+#define VIDEO_STREAM_DESCRIPTOR      0x02
+#define REGISTRATION_DESCRIPTOR      0x05
+#define ISO_639_LANGUAGE_DESCRIPTOR  0x0a
+#define IOD_DESCRIPTOR               0x1d
+#define SL_DESCRIPTOR                0x1e
+#define FMC_DESCRIPTOR               0x1f
+#define METADATA_DESCRIPTOR          0x26
+#define METADATA_STD_DESCRIPTOR      0x27
+
 typedef struct MpegTSContext MpegTSContext;
 
-MpegTSContext *avpriv_old_mpegts_parse_open(AVFormatContext *s);
-int avpriv_old_mpegts_parse_packet(MpegTSContext *ts, AVPacket *pkt,
-                           const uint8_t *buf, int len);
-void avpriv_old_mpegts_parse_close(MpegTSContext *ts);
+MpegTSContext *avpriv_mpegts_parse_open(AVFormatContext *s);
+int avpriv_mpegts_parse_packet(MpegTSContext *ts, AVPacket *pkt,
+                               const uint8_t *buf, int len);
+void avpriv_mpegts_parse_close(MpegTSContext *ts);
 
 typedef struct SLConfigDescr {
     int use_au_start;
@@ -168,6 +185,22 @@ typedef struct Mp4Descr {
     SLConfigDescr sl;
 } Mp4Descr;
 
+/*
+ * ETSI 300 468 descriptor 0x6A(AC-3)
+ * Refer to: ETSI EN 300 468 V1.11.1 (2010-04) (SI in DVB systems)
+ */
+typedef struct DVBAC3Descriptor {
+    uint8_t  component_type_flag;
+    uint8_t  bsid_flag;
+    uint8_t  mainid_flag;
+    uint8_t  asvc_flag;
+    uint8_t  reserved_flags;
+    uint8_t  component_type;
+    uint8_t  bsid;
+    uint8_t  mainid;
+    uint8_t  asvc;
+} DVBAC3Descriptor;
+
 /**
  * Parse an MPEG-2 descriptor
  * @param[in] fc                    Format context (used for logging only)
@@ -177,7 +210,7 @@ typedef struct Mp4Descr {
  * @param desc_list_end             End of buffer
  * @return <0 to stop processing
  */
-int ff_old_parse_mpeg2_descriptor(AVFormatContext *fc, AVStream *st, int stream_type,
+int ff_parse_mpeg2_descriptor(AVFormatContext *fc, AVStream *st, int stream_type,
                               const uint8_t **pp, const uint8_t *desc_list_end,
                               Mp4Descr *mp4_descr, int mp4_descr_count, int pid,
                               MpegTSContext *ts);

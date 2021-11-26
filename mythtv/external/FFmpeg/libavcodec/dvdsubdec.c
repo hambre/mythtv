@@ -400,7 +400,7 @@ static int decode_dvd_subtitles(DVDSubContext *ctx, AVSubtitle *sub_header,
                 } else {
                     sub_header->rects[0]->nb_colors = 4;
                     guess_palette(ctx, (uint32_t*)sub_header->rects[0]->data[1],
-                                  0xffffff);
+                                  0xffff00);
                 }
                 sub_header->rects[0]->x = x1;
                 sub_header->rects[0]->y = y1;
@@ -429,10 +429,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
         cmd_pos = next_cmd_pos;
     }
     if (sub_header->num_rects > 0)
-    {
-        sub_header->forced = is_menu;
         return is_menu;
-    }
  fail:
     reset_rects(sub_header);
     return -1;

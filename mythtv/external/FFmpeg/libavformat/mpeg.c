@@ -519,37 +519,34 @@ redo:
     }
 
     es_type = m->psm_es_type[startcode & 0xff];
-        if (es_type == STREAM_TYPE_VIDEO_MPEG1) {
-            codec_id = AV_CODEC_ID_MPEG2VIDEO;
-            type     = AVMEDIA_TYPE_VIDEO;
-        } else if (es_type == STREAM_TYPE_VIDEO_MPEG2) {
-            codec_id = AV_CODEC_ID_MPEG2VIDEO;
-            type     = AVMEDIA_TYPE_VIDEO;
-        } else if (es_type == STREAM_TYPE_AUDIO_MPEG1 ||
-                   es_type == STREAM_TYPE_AUDIO_MPEG2) {
-            codec_id = AV_CODEC_ID_MP3;
-            type     = AVMEDIA_TYPE_AUDIO;
-        } else if (es_type == STREAM_TYPE_AUDIO_AAC) {
-            codec_id = AV_CODEC_ID_AAC;
-            type     = AVMEDIA_TYPE_AUDIO;
-        } else if (es_type == STREAM_TYPE_AUDIO_AAC_LATM) {
-            codec_id = AV_CODEC_ID_AAC_LATM;
-            type     = AVMEDIA_TYPE_AUDIO;
-        } else if (es_type == STREAM_TYPE_VIDEO_MPEG4) {
-            codec_id = AV_CODEC_ID_MPEG4;
-            type     = AVMEDIA_TYPE_VIDEO;
-        } else if (es_type == STREAM_TYPE_VIDEO_H264) {
-            codec_id = AV_CODEC_ID_H264;
-            type     = AVMEDIA_TYPE_VIDEO;
-        } else if (es_type == STREAM_TYPE_VIDEO_HEVC) {
-            codec_id = AV_CODEC_ID_HEVC;
-            type     = AVMEDIA_TYPE_VIDEO;
-        } else if (es_type == STREAM_TYPE_AUDIO_AC3) {
-            codec_id = AV_CODEC_ID_AC3;
-            type     = AVMEDIA_TYPE_AUDIO;
-        } else if (m->imkh_cctv && es_type == 0x91) {
-            codec_id = AV_CODEC_ID_PCM_MULAW;
-            type     = AVMEDIA_TYPE_AUDIO;
+    if (es_type == STREAM_TYPE_VIDEO_MPEG1) {
+        codec_id = AV_CODEC_ID_MPEG2VIDEO;
+        type     = AVMEDIA_TYPE_VIDEO;
+    } else if (es_type == STREAM_TYPE_VIDEO_MPEG2) {
+        codec_id = AV_CODEC_ID_MPEG2VIDEO;
+        type     = AVMEDIA_TYPE_VIDEO;
+    } else if (es_type == STREAM_TYPE_AUDIO_MPEG1 ||
+               es_type == STREAM_TYPE_AUDIO_MPEG2) {
+        codec_id = AV_CODEC_ID_MP3;
+        type     = AVMEDIA_TYPE_AUDIO;
+    } else if (es_type == STREAM_TYPE_AUDIO_AAC) {
+        codec_id = AV_CODEC_ID_AAC;
+        type     = AVMEDIA_TYPE_AUDIO;
+    } else if (es_type == STREAM_TYPE_VIDEO_MPEG4) {
+        codec_id = AV_CODEC_ID_MPEG4;
+        type     = AVMEDIA_TYPE_VIDEO;
+    } else if (es_type == STREAM_TYPE_VIDEO_H264) {
+        codec_id = AV_CODEC_ID_H264;
+        type     = AVMEDIA_TYPE_VIDEO;
+    } else if (es_type == STREAM_TYPE_VIDEO_HEVC) {
+        codec_id = AV_CODEC_ID_HEVC;
+        type     = AVMEDIA_TYPE_VIDEO;
+    } else if (es_type == STREAM_TYPE_AUDIO_AC3) {
+        codec_id = AV_CODEC_ID_AC3;
+        type     = AVMEDIA_TYPE_AUDIO;
+    } else if (m->imkh_cctv && es_type == 0x91) {
+        codec_id = AV_CODEC_ID_PCM_MULAW;
+        type     = AVMEDIA_TYPE_AUDIO;
     } else if (startcode >= 0x1e0 && startcode <= 0x1ef) {
         static const unsigned char avs_seqh[4] = { 0, 0, 1, 0xb0 };
         unsigned char buf[8];
@@ -603,9 +600,6 @@ redo:
     } else if (startcode >= 0x20 && startcode <= 0x3f) {
         type     = AVMEDIA_TYPE_SUBTITLE;
         codec_id = AV_CODEC_ID_DVD_SUBTITLE;
-    } else if (startcode == 0x69 || startcode == 0x49) {
-        type     = AVMEDIA_TYPE_DATA;
-        codec_id = AV_CODEC_ID_MPEG2VBI;
     } else if (startcode >= 0xfd55 && startcode <= 0xfd5f) {
         type     = AVMEDIA_TYPE_VIDEO;
         codec_id = AV_CODEC_ID_VC1;
@@ -628,13 +622,8 @@ skip:
         st->codecpar->channel_layout = AV_CH_LAYOUT_MONO;
         st->codecpar->sample_rate = 8000;
     }
-    st->request_probe     = request_probe;
+    st->internal->request_probe     = request_probe;
     st->need_parsing      = AVSTREAM_PARSE_FULL;
-
-    /* notify the callback of the change in streams */
-    if (s->streams_changed) {
-        s->streams_changed(s->stream_change_data);
-    }
 
 found:
     if (st->discard >= AVDISCARD_ALL)
@@ -945,7 +934,7 @@ static int vobsub_read_packet(AVFormatContext *s, AVPacket *pkt)
         if (tmpq->current_sub_idx >= tmpq->nb_subs)
             continue;
 
-        ts = tmpq->subs[tmpq->current_sub_idx].pts;
+        ts = tmpq->subs[tmpq->current_sub_idx]->pts;
         if (ts < min_ts) {
             min_ts = ts;
             sid = i;
@@ -961,7 +950,7 @@ static int vobsub_read_packet(AVFormatContext *s, AVPacket *pkt)
     /* compute maximum packet size using the next packet position. This is
      * useful when the len in the header is non-sense */
     if (q->current_sub_idx < q->nb_subs) {
-        psize = q->subs[q->current_sub_idx].pos - pkt->pos;
+        psize = q->subs[q->current_sub_idx]->pos - pkt->pos;
     } else {
         int64_t fsize = avio_size(pb);
         psize = fsize < 0 ? 0xffff : fsize - pkt->pos;

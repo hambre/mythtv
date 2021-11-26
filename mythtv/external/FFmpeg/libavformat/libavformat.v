@@ -1,23 +1,6 @@
 LIBAVFORMAT_MAJOR {
     global:
         av*;
-        ffurl_read;
-        ffurl_read_complete;
-        ffurl_seek;
-        ffurl_size;
-        ffurl_protocol_next;
-        ffurl_open;
-        ffurl_close;
-        ffurl_write;
-        url_*;
-        ff_timefilter_destroy;
-        ff_timefilter_new;
-        ff_timefilter_update;
-        ff_timefilter_reset;
-        get_*;
-        put_*;
-        ff_codec_get_id;
-        ff_read_frame_flush;
     local:
         *;
 };

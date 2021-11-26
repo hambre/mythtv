@@ -58,16 +58,14 @@ typedef struct V4L2m2mContext {
     int draining;
     AVPacket buf_pkt;
 
+    /* Reference to a frame. Only used during encoding */
+    AVFrame *frame;
+
     /* Reference to self; only valid while codec is active. */
     AVBufferRef *self_ref;
 
     /* reference back to V4L2m2mPriv */
     void *priv;
-
-    AVBufferRef *device_ref;
-
-    /* generate DRM frames */
-    int output_drm;
 } V4L2m2mContext;
 
 typedef struct V4L2m2mPriv {

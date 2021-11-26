@@ -20,7 +20,7 @@
  */
 
 #include "libavutil/attributes.h"
-#include "mpegts-mythtv.h"
+#include "mpegts.h"
 #include "rtpdec_formats.h"
 
 struct PayloadContext {
