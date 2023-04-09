@@ -40,11 +40,13 @@
 #include "libmythui/mythuibuttontree.h"
 #include "libmythui/mythuihelper.h"
 #include "libmythui/mythuiimage.h"
+#include "libmythui/mythuiprogressbar.h"
 #include "libmythui/mythuistatetype.h"
 #include "libmythui/mythuitext.h"
 
 // MythFrontend
 #include "editvideometadata.h"
+#include "playbackstate.h"
 #include "videodlg.h"
 #include "videofileassoc.h"
 #include "videofilter.h"
@@ -561,7 +563,36 @@ namespace
         h.handleState("watchedstate");
         h.handleState("videolevel");
     }
+
+    void CopyPlaybackStateToUI(const PlaybackState &playbackState,
+            const VideoMetadata *metadata,
+            MythUIButtonListItem *item = nullptr,
+            MythScreenType *screen = nullptr)
+    {
+        if (!metadata || (!item && !screen))
+        {
+            return;
+        }
+
+        const auto bookmarkState = playbackState.HasBookmark(metadata->GetFilename()) ? "yes" : "no";
+        const auto watchedPercent = playbackState.GetWatchedPercent(metadata->GetFilename());
+        if (item)
+        {
+            item->DisplayState(bookmarkState, "bookmarkstate");
+            item->SetProgress1(0, watchedPercent ? 100 : 0, watchedPercent);
+        }
+        if (screen)
+        {
+            CheckedSet(screen, "bookmarkstate", bookmarkState);
+            auto watchedProgress = dynamic_cast<MythUIProgressBar *>(screen->GetChild("watchedprogressbar"));
+            if (watchedProgress)
+            {
+                watchedProgress->Set(0, 100, watchedPercent);
+            }
+        }
+    }
 }
+
 
 class ItemDetailPopup : public MythScreenType
 {
@@ -576,9 +607,9 @@ class ItemDetailPopup : public MythScreenType
 
   public:
     ItemDetailPopup(MythScreenStack *lparent, VideoMetadata *metadata,
-            const VideoMetadataListManager &listManager) :
+            const VideoMetadataListManager &listManager, PlaybackState &playbackState) :
         MythScreenType(lparent, kWindowName), m_metadata(metadata),
-        m_listManager(listManager)
+        m_listManager(listManager), m_playbackState(playbackState)
     {
     }
 
@@ -607,6 +638,7 @@ class ItemDetailPopup : public MythScreenType
 
         ScreenCopyDest dest(this);
         CopyMetadataToUI(m_metadata, dest);
+        CopyPlaybackStateToUI(m_playbackState, m_metadata, nullptr, this);
 
         return true;
     }
@@ -662,6 +694,7 @@ class ItemDetailPopup : public MythScreenType
     static const char * const kWindowName;
     VideoMetadata *m_metadata   {nullptr};
     const VideoMetadataListManager &m_listManager;
+    PlaybackState &m_playbackState;
 
     MythUIButton  *m_playButton {nullptr};
     MythUIButton  *m_doneButton {nullptr};
@@ -795,6 +828,8 @@ class VideoDialogPrivate
     QString m_lastTreeNodePath;
     QMap<QString, int> m_notifications;
 
+    PlaybackState m_playbackState;
+
   private:
     parental_level_map m_ratingToPl;
 };
@@ -862,6 +897,20 @@ VideoDialog::VideoDialog(MythScreenStack *lparent, const QString& lname,
 
     StorageGroup::ClearGroupToUseCache();
     MythCoreContext::ClearBackendServerPortCache();
+    // Get notified when playback stopped, so we can update watched progress
+    connect(gCoreContext, &MythCoreContext::TVPlaybackStopped, this, &VideoDialog::OnPlaybackStopped);
+    connect(gCoreContext, &MythCoreContext::TVPlaybackAborted, this, &VideoDialog::OnPlaybackStopped);
+}
+
+void VideoDialog::OnPlaybackStopped()
+{
+    auto *item = GetItemCurrent();
+    const auto *metadata = GetMetadata(item);
+    if (metadata)
+    {
+        m_d->m_playbackState.Update(metadata->GetFilename());
+    }
+    UpdateText(item);
 }
 
 VideoDialog::~VideoDialog()
@@ -1001,6 +1050,7 @@ bool VideoDialog::Create()
     UIUtilW::Assign(this, m_parentalLevelState, "parentallevel");
     UIUtilW::Assign(this, m_watchedState, "watchedstate");
     UIUtilW::Assign(this, m_studioState, "studiostate");
+    UIUtilW::Assign(this, m_bookmarkState, "bookmarkstate");
 
     if (err)
     {
@@ -1012,6 +1062,7 @@ bool VideoDialog::Create()
     CheckedSet(m_parentalLevelState, "None");
     CheckedSet(m_watchedState, "None");
     CheckedSet(m_studioState, "None");
+    CheckedSet(m_bookmarkState, "None");
 
     BuildFocusList();
 
@@ -1025,6 +1076,8 @@ bool VideoDialog::Create()
                 this, &VideoDialog::UpdateText);
         connect(m_videoButtonTree, &MythUIButtonTree::nodeChanged,
                 this, &VideoDialog::SetCurrentNode);
+        connect(m_videoButtonTree, &MythUIButtonTree::itemVisible,
+                this, &VideoDialog::UpdateVisible);
     }
     else
     {
@@ -1034,6 +1087,8 @@ bool VideoDialog::Create()
                 this, &VideoDialog::handleSelect);
         connect(m_videoButtonList, &MythUIButtonList::itemSelected,
                 this, &VideoDialog::UpdateText);
+        connect(m_videoButtonList, &MythUIButtonList::itemVisible,
+                this, &VideoDialog::UpdateVisible);
     }
 
     return true;
@@ -1235,6 +1290,7 @@ void VideoDialog::UpdateItem(MythUIButtonListItem *item)
 
     MythUIButtonListItemCopyDest dest(item);
     CopyMetadataToUI(metadata, dest);
+    CopyPlaybackStateToUI(m_d->m_playbackState, metadata, item, nullptr);
 
     MythGenericTree *parent = node->getParent();
 
@@ -1312,6 +1368,7 @@ void VideoDialog::UpdateItem(MythUIButtonListItem *item)
  */
 void VideoDialog::fetchVideos()
 {
+    m_d->m_playbackState.Initialize();
     MythGenericTree *oldroot = m_d->m_rootNode;
     if (!m_d->m_treeLoaded)
     {
@@ -2186,13 +2243,29 @@ void VideoDialog::UpdatePosition()
                                     .arg(currentList->GetCount()));
 }
 
+/** \fn VideoDialog::UpdateVisible(MythUIButtonListItem *item)
+ *  \brief Update playback state for for a given visible ButtonListItem
+ *  \return void.
+ */
+void VideoDialog::UpdateVisible(MythUIButtonListItem *item)
+{
+    if (!item)
+        return;
+
+    VideoMetadata *metadata = GetMetadata(item);
+    if (!metadata)
+        return;
+
+    CopyPlaybackStateToUI(m_d->m_playbackState, metadata, item, nullptr);
+}
+
 /** \fn VideoDialog::UpdateText(MythUIButtonListItem *item)
  *  \brief Update the visible text values for a given ButtonListItem.
  *  \return void.
  */
 void VideoDialog::UpdateText(MythUIButtonListItem *item)
 {
-    if (!item)
+    if (!item || !item->isVisible())
         return;
 
     MythUIButtonList *currentList = item->parent();
@@ -2222,6 +2295,7 @@ void VideoDialog::UpdateText(MythUIButtonListItem *item)
 
     ScreenCopyDest dest(this);
     CopyMetadataToUI(metadata, dest);
+    CopyPlaybackStateToUI(m_d->m_playbackState, metadata, item, m_d->m_currentNode ? this : nullptr);
 
     if (node->getInt() == kSubFolder && !metadata)
     {
@@ -2863,7 +2937,7 @@ bool VideoDialog::DoItemDetailShow()
     {
         MythScreenStack *mainStack = GetMythMainWindow()->GetMainStack();
         auto *idp = new ItemDetailPopup(mainStack, metadata,
-                m_d->m_videoList->getListCache());
+                m_d->m_videoList->getListCache(), m_d->m_playbackState);
 
         if (idp->Create())
         {
